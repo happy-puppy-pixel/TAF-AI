@@ -1,0 +1,165 @@
+<div class="d-flex flex-column h-100 bg-light">
+
+    <!-- Header -->
+    <div class="px-4 py-3 bg-dark text-white border-bottom">
+        <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-mortarboard-fill me-2 text-primary"></i>Gestion des Étudiants
+        </h5>
+        <small class="text-secondary">Filière ILCS — Base de données</small>
+    </div>
+
+    <div class="flex-grow-1 overflow-auto p-4">
+        <div style="max-width:900px;margin:0 auto">
+
+            <!-- Stats cards -->
+            <div class="row g-3 mb-4" *ngIf="etudiants().length > 0">
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center">
+                        <div class="card-body py-3">
+                            <div class="fw-bold fs-4 text-primary">{{ etudiants().length }}</div>
+                            <div class="text-secondary" style="font-size:12px">Étudiants</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center">
+                        <div class="card-body py-3">
+                            <div class="fw-bold fs-4 text-success">{{ averageNote() }}</div>
+                            <div class="text-secondary" style="font-size:12px">Moyenne générale</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center">
+                        <div class="card-body py-3">
+                            <div class="fw-bold fs-4 text-warning">{{ bestEtudiant()?.note ?? '—' }}</div>
+                            <div class="text-secondary" style="font-size:12px">Meilleure note</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center">
+                        <div class="card-body py-3">
+                            <div class="fw-bold fs-4 text-info">{{ admisCount() }}</div>
+                            <div class="text-secondary" style="font-size:12px">Admis</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search bar -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small text-secondary mb-1">Rechercher par</label>
+                            <select class="form-select form-select-sm" [(ngModel)]="searchType">
+                                <option value="all">Tous les étudiants</option>
+                                <option value="apogee">Numéro Apogée</option>
+                                <option value="nom">Nom / Prénom</option>
+                                <option value="filiere">Filière</option>
+                                <option value="niveau">Niveau</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5" *ngIf="searchType !== 'all'">
+                            <label class="form-label small text-secondary mb-1">Valeur</label>
+                            <input class="form-control form-control-sm"
+                                   [(ngModel)]="searchValue"
+                                   (keydown.enter)="search()"
+                                   placeholder="Ex: 123456, ALAMI, ILCS, 1A ...">
+                        </div>
+                        <div class="col-md-4 d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" (click)="search()" [disabled]="isLoading()">
+                                <i class="bi bi-search me-1"></i>Rechercher
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" (click)="reset()">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error -->
+            <div *ngIf="error()" class="alert alert-warning d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ error() }}</span>
+            </div>
+
+            <!-- Loading -->
+            <div *ngIf="isLoading()" class="text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <div class="text-secondary">Chargement...</div>
+            </div>
+
+            <!-- Table -->
+            <div *ngIf="!isLoading() && etudiants().length > 0" class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom d-flex align-items-center">
+          <span class="fw-semibold" style="font-size:14px">
+            <i class="bi bi-table me-2 text-primary"></i>
+              {{ etudiants().length }} étudiant(s) trouvé(s)
+          </span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                        <tr style="font-size:12px">
+                            <th>Apogée</th>
+                            <th>Nom &amp; Prénom</th>
+                            <th>Filière</th>
+                            <th>Niveau</th>
+                            <th>Note /20</th>
+                            <th>Mention</th>
+                        </tr>
+                        </thead>
+                        <tbody style="font-size:13px">
+                        <tr *ngFor="let e of etudiants()" [class.table-warning]="isBest(e)">
+                            <td>
+                                <span class="badge bg-secondary font-monospace">{{ e.apogee }}</span>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ e.nom }}</div>
+                                <div class="text-secondary" style="font-size:12px">{{ e.prenom }}</div>
+                            </td>
+                            <td>
+                  <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
+                    {{ e.filiere }}
+                  </span>
+                            </td>
+                            <td>
+                  <span [class]="getNiveauClass(e.niveau)" style="font-size:11px">
+                    {{ e.niveau }}
+                  </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height:6px;min-width:60px">
+                                        <div class="progress-bar"
+                                             [class]="getProgressClass(e.note)"
+                                             [style.width]="getProgressWidth(e.note)">
+                                        </div>
+                                    </div>
+                                    <span [class]="getMentionClass(e.note)" style="font-size:13px;min-width:28px">
+                      {{ e.note }}
+                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <small [class]="getMentionClass(e.note)">{{ getMentionLabel(e.note) }}</small>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Empty -->
+            <div *ngIf="!isLoading() && etudiants().length === 0 && !error()"
+                 class="text-center py-5 text-secondary">
+                <i class="bi bi-search d-block mb-2" style="font-size:32px"></i>
+                Aucun étudiant trouvé.
+            </div>
+
+        </div>
+    </div>
+</div>

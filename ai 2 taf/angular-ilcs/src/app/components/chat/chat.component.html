@@ -1,0 +1,179 @@
+<div class="d-flex flex-column h-100 bg-body">
+
+  <!-- Topbar -->
+  <div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom bg-dark text-white">
+    <div>
+      <div class="fw-semibold" style="font-size:14px">
+        {{ activeSession?.title || 'Nouvelle conversation' }}
+      </div>
+      <div class="text-secondary" style="font-size:11px">Agent ILCS • Spring AI</div>
+    </div>
+    <div class="ms-auto">
+      <span class="badge bg-primary" style="font-size:10px">
+        <i class="bi bi-cpu me-1"></i>claude-3.5
+      </span>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="flex-grow-1 overflow-auto p-3 p-md-4" style="background:#f8f9fa">
+
+    <!-- Empty state -->
+    <div *ngIf="!activeSession?.messages?.length"
+         class="d-flex flex-column align-items-center justify-content-center h-100 text-center py-5">
+      <div class="mb-3" style="font-size:48px">🤖</div>
+      <h5 class="fw-semibold text-dark mb-2">Comment puis-je vous aider ?</h5>
+      <p class="text-secondary mb-4" style="max-width:360px;font-size:14px">
+        Posez une question vocalement ou par texte, uploadez un fichier PDF, image ou autre document.
+      </p>
+      <div class="d-flex flex-wrap gap-2 justify-content-center">
+        <button class="btn btn-outline-primary btn-sm"
+                (click)="question='Qui est l\'étudiant avec l\'apogée 123456 ?'">
+          🎓 Chercher un étudiant
+        </button>
+        <button class="btn btn-outline-primary btn-sm"
+                (click)="question='Liste tous les étudiants de la filière ILCS'">
+          📋 Liste des étudiants
+        </button>
+        <button class="btn btn-outline-primary btn-sm"
+                (click)="question='Quels étudiants ont une note supérieure à 16 ?'">
+          📊 Statistiques
+        </button>
+        <button class="btn btn-outline-primary btn-sm"
+                (click)="question='Résume le fichier que je vais uploader'">
+          📄 Analyser un fichier
+        </button>
+        <button class="btn btn-outline-primary btn-sm"
+                (click)="question='Décris cette image que je vais uploader'">
+          🖼️ Analyser une image
+        </button>
+      </div>
+    </div>
+
+    <!-- Message list -->
+    <div style="max-width:800px;margin:0 auto">
+      <div *ngFor="let msg of activeSession?.messages" class="mb-4">
+
+        <!-- USER -->
+        <div *ngIf="msg.role === 'user'" class="d-flex gap-2 justify-content-end">
+          <div style="max-width:75%">
+            <div class="bg-primary text-white rounded-3 px-3 py-2" style="font-size:14px;line-height:1.6">
+              {{ msg.text }}
+            </div>
+            <div class="text-end text-secondary mt-1" style="font-size:11px">
+              {{ formatTime(msg.timestamp) }}
+            </div>
+          </div>
+          <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white flex-shrink-0"
+               style="width:32px;height:32px;font-size:13px;align-self:flex-end">
+            <i class="bi bi-person-fill"></i>
+          </div>
+        </div>
+
+        <!-- AI -->
+        <div *ngIf="msg.role === 'ai'" class="d-flex gap-2">
+          <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:32px;height:32px;font-size:15px;background:linear-gradient(135deg,#0d6efd,#6610f2);align-self:flex-start;margin-top:4px">
+            🤖
+          </div>
+          <div style="max-width:75%">
+            <!-- Typing indicator -->
+            <div *ngIf="msg.isTyping && !msg.text"
+                 class="bg-white border rounded-3 px-3 py-2">
+              <div class="d-flex gap-1 align-items-center" style="height:20px">
+                <span class="typing-dot bg-secondary rounded-circle"></span>
+                <span class="typing-dot bg-secondary rounded-circle" style="animation-delay:.2s"></span>
+                <span class="typing-dot bg-secondary rounded-circle" style="animation-delay:.4s"></span>
+              </div>
+            </div>
+            <!-- Message text -->
+            <div *ngIf="msg.text"
+                 class="bg-white border rounded-3 px-3 py-2" style="font-size:14px;line-height:1.7">
+              <span [innerHTML]="msg.text"></span>
+              <span *ngIf="msg.isTyping" class="cursor-blink ms-1">|</span>
+            </div>
+            <!-- Actions -->
+            <div *ngIf="msg.text && !msg.isTyping"
+                 class="d-flex gap-1 mt-1">
+              <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px"
+                      (click)="copyText(msg.text)">
+                <i class="bi bi-clipboard me-1"></i>Copier
+              </button>
+              <button *ngIf="audioService.isSpeechSynthesisSupported()" 
+                      class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px"
+                      (click)="speakResponse(msg.text)"
+                      title="Écouter la réponse">
+                <i class="bi bi-volume-up me-1"></i>Vocal
+              </button>
+              <div class="text-secondary ms-1 align-self-center" style="font-size:11px">
+                {{ formatTime(msg.timestamp) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div #messagesEnd></div>
+    </div>
+  </div>
+
+  <!-- File preview -->
+  <div *ngIf="selectedFile"
+       class="mx-3 mb-0 mt-2 d-flex align-items-center gap-2 bg-light border rounded-3 px-3 py-2">
+    <i class="bi flex-shrink-0" [class]="getFileIcon(selectedFile.name)" style="font-size:18px"></i>
+    <span class="flex-grow-1 text-truncate" style="font-size:13px">{{ selectedFile.name }}</span>
+    <small class="text-secondary">{{ (selectedFile.size / 1024).toFixed(1) }} KB</small>
+    <button class="btn btn-sm btn-outline-danger py-0 px-2" (click)="removeFile()">
+      <i class="bi bi-x"></i>
+    </button>
+  </div>
+
+  <!-- Input area -->
+  <div class="p-3 border-top bg-white"
+       [class.drag-over]="dragOver"
+       (dragover)="onDragOver($event)"
+       (dragleave)="onDragLeave()"
+       (drop)="onDrop($event)">
+    <div style="max-width:800px;margin:0 auto">
+      <div class="input-group shadow-sm">
+        <!-- File button -->
+        <button class="btn btn-outline-secondary" type="button"
+                title="Joindre un fichier (PDF, TXT, CSV, images)"
+                (click)="fileInput.click()">
+          <i class="bi bi-paperclip"></i>
+        </button>
+        <input #fileInput type="file" class="d-none"
+               accept=".pdf,.txt,.csv,.md,.jpg,.jpeg,.png,.gif,.bmp,.webp"
+               (change)="onFileSelected($event)">
+
+        <!-- Audio controls -->
+        <app-audio-controls (onTranscript)="onAudioTranscript($event)"></app-audio-controls>
+
+        <!-- Text input -->
+        <textarea class="form-control border-start-0"
+                  rows="1"
+                  placeholder="Posez votre question... (Entrée pour envoyer)"
+                  [(ngModel)]="question"
+                  (keydown)="handleKeydown($event)"
+                  style="resize:none;max-height:120px;overflow-y:auto"></textarea>
+
+        <!-- Send button -->
+        <button class="btn btn-primary px-3" type="button"
+                [disabled]="!question.trim() || isLoading"
+                (click)="send()">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm" role="status"></span>
+          <i *ngIf="!isLoading" class="bi bi-send-fill"></i>
+        </button>
+      </div>
+
+      <div class="d-flex justify-content-between mt-1 px-1">
+        <small class="text-secondary">
+          <i class="bi bi-info-circle me-1"></i>
+          Glissez-déposez un fichier ou utilisez 📎. Cliquez sur 🎤 pour parler.
+        </small>
+        <small class="text-secondary">Entrée pour envoyer · Maj+Entrée pour nouvelle ligne</small>
+      </div>
+    </div>
+  </div>
+
+</div>

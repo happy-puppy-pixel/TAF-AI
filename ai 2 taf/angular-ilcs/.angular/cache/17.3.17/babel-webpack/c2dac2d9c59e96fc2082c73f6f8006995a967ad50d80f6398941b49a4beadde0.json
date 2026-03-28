@@ -1,0 +1,1 @@
+{"ast":null,"code":"import { provideHttpClient, withFetch } from '@angular/common/http';\nexport const appConfig = {\n  providers: [provideHttpClient(withFetch())]\n};","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}

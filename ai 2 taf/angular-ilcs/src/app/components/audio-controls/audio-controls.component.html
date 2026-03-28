@@ -1,0 +1,25 @@
+<div class="audio-controls d-flex gap-2 align-items-center">
+  <!-- Microphone button -->
+  <button 
+    *ngIf="isSupported"
+    class="btn btn-sm"
+    [class.btn-outline-secondary]="!isRecording"
+    [class.btn-danger]="isRecording"
+    (click)="toggleRecording()"
+    [title]="isRecording ? 'Arrêter l\'enregistrement' : 'Commencer l\'enregistrement vocal'">
+    <i class="bi" [class.bi-mic]="!isRecording" [class.bi-mic-fill]="isRecording"></i>
+    <span *ngIf="isRecording" class="ms-1">
+      <span class="recording-indicator"></span>
+    </span>
+  </button>
+
+  <!-- Not supported message -->
+  <small *ngIf="!isSupported" class="text-muted" title="La reconnaissance vocale n'est pas supportée dans ce navigateur">
+    <i class="bi bi-mic-mute"></i>
+  </small>
+
+  <!-- Transcript preview (optional) -->
+  <div *ngIf="transcript && isRecording" class="transcript-preview">
+    <small class="text-muted">{{ transcript }}</small>
+  </div>
+</div>

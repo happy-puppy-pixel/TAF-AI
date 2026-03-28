@@ -1,0 +1,38 @@
+.recording-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #dc3545;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.transcript-preview {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-style: italic;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audio-controls {
+  position: relative;
+}
